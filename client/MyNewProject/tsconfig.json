@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "allowJs": true,         // Allow JavaScript files
+    "checkJs": false,        // Disable type checking for JS files
+    "noEmit": true,          // No output, just type checking
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "jsx": "react-native",   // React Native JSX setting
+    "target": "ES6",
+    "module": "ESNext"
+  },
+  "include": [
+    "src/**/*.js",    // Include JS files
+    "src/**/*.jsx",   // Include JSX files
+    "src/**/*.ts",    // If you have TypeScript files as well
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
