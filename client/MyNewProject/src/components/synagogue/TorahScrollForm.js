@@ -1,7 +1,7 @@
 import { Image, TextInput, StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import React from 'react'
 import ImgPicker from './ImgPicker'
-import DatePicker from './DatePicker'
+import MonthAndDayDatePicker from './MonthAndDayDatePicker'
 
 const TorahScrollForm = ({ handleInputChange, torahScrolls, handleRemoveTorahScroll, handleRemoveDonorForItem }) => {
 
@@ -27,16 +27,22 @@ const TorahScrollForm = ({ handleInputChange, torahScrolls, handleRemoveTorahScr
 
                 {/* Running over each donorFor item */}
                 {torahScroll.donorFor.map((_, donorForIndex) => (
-                    <View key={donorForIndex}>
+                    <View style={styles.donorForContainer} key={donorForIndex}>
                         <View style={styles.inputRow}>
+                            <View style={{width: '85%'}}>
 
-                            {/* Donor for input */}
-                            <TextInput
-                                placeholder={`#${donorForIndex >= 1 ? `${donorForIndex + 1} (optional)` : donorForIndex + 1}  |  For the elevation of the soul of`}
-                                value={torahScroll.donorFor[donorForIndex].name}
-                                onChangeText={(text) => handleInputChange(`torahScroll_donorFor_${torahScrollIndex}_${donorForIndex}_name`, text)}
-                                style={styles.input}
-                            />
+                                {/* Donor for input */}
+                                <TextInput
+                                    placeholder={`#${donorForIndex >= 1 ? `${donorForIndex + 1} (optional)` : donorForIndex + 1}  |  For the elevation of the soul of`}
+                                    value={torahScroll.donorFor[donorForIndex].name}
+                                    onChangeText={(text) => handleInputChange(`torahScroll_donorFor_${torahScrollIndex}_${donorForIndex}_name`, text)}
+                                    style={styles.donorForInput}
+                                />
+
+                                {/* Date Picker */}
+                                <MonthAndDayDatePicker date={torahScroll.donorFor[donorForIndex].date} handleInputChange={handleInputChange} torahScrollIndex={torahScrollIndex} donorForIndex={donorForIndex}/>
+
+                            </View>
 
                             {/* Minus button for donorFor input */}
                             {donorForIndex > 0 && (
@@ -45,12 +51,12 @@ const TorahScrollForm = ({ handleInputChange, torahScrolls, handleRemoveTorahScr
                                 </TouchableOpacity>
                             )}
                         </View>
-                        <DatePicker />
+                        
                     </View>
                 ))}
 
                 {/* Image picker */}
-                <ImgPicker handleInputChange={handleInputChange} torahScrollIndex={torahScrollIndex}/>
+                <ImgPicker handleInputChange= {handleInputChange} text={'Torah Sctoll Image'} torahScrollIndex={torahScrollIndex}/>
 
                 {/* Image View */}
                 {torahScroll.image && <Image source={{ uri: torahScroll.image }} style={styles.imagePreview} />}
@@ -71,7 +77,7 @@ const TorahScrollForm = ({ handleInputChange, torahScrolls, handleRemoveTorahScr
 export default TorahScrollForm
 
 const styles = StyleSheet.create({
-    inputRow: {
+    inputRow: {  
         flexDirection: 'row', 
         alignItems: 'center', 
         marginBottom: 10, 
@@ -103,7 +109,16 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingHorizontal: 10,
         width: '85%',
-        marginBottom: 10,
+        marginBottom: 15,
+    },
+    donorForInput: {
+        height: 40,
+        borderWidth: 1,
+        borderColor: 'gray',
+        borderRadius: 5,
+        paddingHorizontal: 10,
+        width: '100%',
+        marginBottom: 15,
     },
 
     cardNumber: {
@@ -136,7 +151,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ccc',
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 10,
+        marginLeft: 15,
     },
 
     minusTextDonorFor: {
@@ -150,5 +165,9 @@ const styles = StyleSheet.create({
         height: 100,
         marginTop: 10,
         borderRadius: 5,
-      },
+    },
+    donorForContainer: {
+        marginTop: 25,
+        marginBottom: 25,
+    }
 })

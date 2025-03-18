@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Image, ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import expressApi from '../../api/axios';
 import axios from 'axios';
 import Joi from 'joi';
 import TorahScrollForm from './TorahScrollForm';
+import ImgPicker from './ImgPicker';
+import MonthAndWeekDatePicker from '../MonthAndWeekDatePicker';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
+
 
 const SynagogueForm = () => {
 
@@ -12,21 +16,22 @@ const SynagogueForm = () => {
         name: '',
         city: '',
         street: '',
+        image: '',
+        time: { month: '', week: '' },
         torahScrolls: [
         {
           donorName: '' ,
-          donorFor: [{ name: '' }],
+          donorFor: [{ name: '', date: '' }],
         },
         {
           donorName: '' ,
-          donorFor: [{ name: '' }],
+          donorFor: [{ name: '', date: '' }],
         }
       ],
   });
   const [effectsAfterSub, seteffectAfterSub] = useState(0);
 
   // Effect after submitting
-
   useEffect(() => {
     if (effectsAfterSub !== 0) {
 
@@ -40,25 +45,29 @@ const SynagogueForm = () => {
           }
       
           // Image upload and torah scrolls update
-          const imageUploadAndTorahScrollsUpdate = async () => {
-            const response = await Promise.allSettled(
+          const uploadImages = async () => {
+            const torahScrollResponse = await Promise.allSettled(
               value.torahScrolls.map(async (torahScroll) => {
-                const imageUrl = await uploadImage(torahScroll.image);
+                const imageUrl = await uploadImage(await resizeImage(torahScroll.image));
                 return { ...torahScroll, image: imageUrl };
               })
             );
-      
-            const updatedTorahScrolls = response.map(result =>
-              result.status === 'fulfilled' ? result.value : { ...result.reason }
-            );
+            const updatedTorahScrolls = torahScrollResponse.map(result =>
+            result.status === 'fulfilled' && result.value );
+            
+            const synagogueResponse = await uploadImage(await resizeImage(synagogueInputs.image));
+            const updatedSynagogueImage = synagogueResponse.map(result =>
+            result.status === 'fulfilled' && result.value );
+            
       
             setSynagogueInputs((prev) => ({
               ...prev,
+              image: updatedSynagogueImage,
               torahScrolls: updatedTorahScrolls,
             }));
           };
-      
-          imageUploadAndTorahScrollsUpdate();
+          uploadImages();
+
         } catch (error) {
           if (error.isJoi) {
             console.log(error.details.map(err => err.message).join('\n'));
@@ -69,70 +78,112 @@ const SynagogueForm = () => {
           }
         }
       };
-        
       validateAndUpload();
+
+      
     }
   }, [effectsAfterSub]); 
   
 
   // Joi Validation Schema
 
-const synagogueSchema = Joi.object({
-  // Validation for name, city, and street
-  name: Joi.string().min(2).max(100).required().messages({
-    'string.empty': 'synagogue name is required',
-    'string.min': 'synagogue name must be at least 2 characters long.',
-    'string.max': 'synagogue name cannot exceed 100 characters.',
-  }),
+  const synagogueSchema = Joi.object({
+    // Validation for name, city, and street
+    name: Joi.string().min(2).max(100).required().messages({
+      'string.empty': 'Synagogue name is required',
+      'string.min': 'Synagogue name must be at least 2 characters long.',
+      'string.max': 'Synagogue name cannot exceed 100 characters.',
+    }),
+  
+    city: Joi.string().min(2).max(100).required().messages({
+      'string.empty': 'Synagogue city is required',
+      'string.min': 'Synagogue city must be at least 2 characters long.',
+      'string.max': 'Synagogue city cannot exceed 100 characters.',
+    }),
+  
+    street: Joi.string().min(2).max(100).required().messages({
+      'string.empty': 'Synagogue street is required',
+      'string.min': 'Synagogue street must be at least 2 characters long.',
+      'string.max': 'Synagogue street cannot exceed 100 characters.',
+    }),
+  
+    // Validation for image (optional)
+    image: Joi.string().uri().required().messages({
+      'any.required': 'Synagogue image is required.',
+      'string.uri': 'The synagogue image URL must be a valid URI if provided.'
+    }),
 
-  city: Joi.string().min(2).max(100).required().messages({
-    'string.empty': 'synagogue city is required',
-    'string.min': 'synagogue city must be at least 2 character long.',
-    'string.max': 'synagogue city cannot exceed 100 characters.',
-  }),
-
-  street: Joi.string().min(2).max(100).required().messages({
-    'string.empty': 'synagogue street is required',
-    'string.min': 'synagogue street must be at least 2 character long.',
-    'string.max': 'synagogue street cannot exceed 100 characters.',
-  }),
-
-  // Validation for torahScrolls array
-  torahScrolls: Joi.array().items(
-    Joi.object({
-
-      // Validation for donorName
-      donorName: Joi.string().min(2).max(100).required().messages({
-        'string.empty': 'Donor name is required',
-        'string.min': 'Donor name must be at least 2 character long.',
-        'string.max': 'Donor name cannot exceed 100 characters.',
-      }),
-
-      // Validation for donorFor array
-      donorFor: Joi.array().items(
-        Joi.object({
-          name: Joi.string().min(2).max(100).required().messages({
-            'string.empty': 'The name of the deceased, is required',
-            'string.min': 'The name of the deceased, must be at least 2 character long.',
-            'string.max': 'The name of the deceased, cannot exceed 100 characters.',
+    time: Joi.object({
+      month: Joi.string().allow('').optional(),
+      week: Joi.string().allow('').optional()
+    }).optional(),
+  
+    // Validation for torahScrolls array
+    torahScrolls: Joi.array().items(
+      Joi.object({
+        // Validation for donorName
+        donorName: Joi.string().min(2).max(100).required().messages({
+          'string.empty': 'Donor name is required',
+          'string.min': 'Donor name must be at least 2 characters long.',
+          'string.max': 'Donor name cannot exceed 100 characters.',
+        }),
+  
+        // Validation for donorFor array
+        donorFor: Joi.array().items(
+          Joi.object({
+            name: Joi.string().min(2).max(100).required().messages({
+              'string.empty': 'The name of the deceased is required',
+              'string.min': 'The name of the deceased must be at least 2 characters long.',
+              'string.max': 'The name of the deceased cannot exceed 100 characters.',
+            }),
+            date: Joi.string().optional().allow(''),
           })
+        ),
+  
+        // Validation for image (optional)
+        image: Joi.string().uri().required().messages({
+          'any.required': 'Image is required.',
+          'string.uri': 'The image URL must be a valid URI if provided.'
         })
-      ),
-
-      // Validation for image (optional)
-      image: Joi.string().uri().required().messages({
-        'any.required': 'Image is required.',
-        'string.uri': 'The image URL must be a valid URI if provided.'
       })
-    })
-  )
-});
+    )
+  });
+  
+  // ImageResizing
 
+  const resizeImage = async (imageUri) => {
+
+    console.log(imageUri) 
+
+    const maxWidth = 800;
+    const maxHeight = 800;
+    const compressFormat = 'JPEG';
+    const quality = 50;
+    const rotation = 0;
+    const outputPath = null;
+  
+    try {
+      const response = await ImageResizer.createResizedImage(
+        imageUri,
+        maxWidth,
+        maxHeight,
+        compressFormat,
+        quality,
+        rotation,
+        outputPath
+      );
+      
+      return response.uri; // Return the new image URI for upload
+    } catch (err) {
+      console.log('Image resizing failed:', err);
+      return null; // Handle error by returning null or throwing an error
+    }
+  };
+  
 
   // Image Upload
   const uploadImage = async (imageUri) => {
     try {
-      console.log('image', imageUri)
       const imageUriFormatted = imageUri.replace("file://", ""); 
       const { signature, timestamp, apiKey, cloudName } = await getSignature();
 
@@ -185,7 +236,7 @@ const synagogueSchema = Joi.object({
     })
     });
   }
-
+  console.log(synagogueInputs);
   // Remove torah scroll card when minus butonn clicked
   const handleRemoveTorahScroll = (torahScrollIndex) => {
     setSynagogueInputs(prev => ({
@@ -203,7 +254,11 @@ const synagogueSchema = Joi.object({
 
         const lastTorahScroll = updatedTorahScrolls[updatedTorahScrolls.length -1]
         const numberOfCards = updatedTorahScrolls.length;
-        const lastCardNotEmpty = (lastTorahScroll.donorName.length > 0 || lastTorahScroll.donorFor[0].name.length > 0) || lastTorahScroll.image;
+        const isTheLastTorahScrollEmpty = // check if he is empty
+        !lastTorahScroll.image && 
+        !lastTorahScroll.donorName && 
+        lastTorahScroll.donorFor.every(ob =>    
+        ob.name.trim() === '' && ob.date === '' );
 
         // Last DonorFor cutting function
         const lastDonorForCutting = (torahScrolls) =>{
@@ -211,9 +266,9 @@ const synagogueSchema = Joi.object({
 
             const numberOfDonorFor = torahScroll.donorFor.length;
             const indexOfLastDonorForItem = torahScroll.donorFor.length -1;
-            const lastDonorForNotEmpty = torahScroll.donorFor[indexOfLastDonorForItem].name.length > 0;
+            const lastDonorForfilled = torahScroll.donorFor[indexOfLastDonorForItem].name.length > 0 || torahScroll.donorFor[indexOfLastDonorForItem].date.length > 0;
 
-              if ( lastDonorForNotEmpty || numberOfDonorFor === 1){ // if last donorFor is not empty, leave the donorFor as is
+              if ( lastDonorForfilled || numberOfDonorFor === 1 ){ // if last donorFor is not empty, leave the donorFor as is
                   return torahScroll; 
               }
 
@@ -224,7 +279,7 @@ const synagogueSchema = Joi.object({
           });
         }
 
-        if (lastCardNotEmpty || numberOfCards === 2) {
+        if ( !isTheLastTorahScrollEmpty || numberOfCards === 2 ) {
           return { ...prev, torahScrolls: lastDonorForCutting(updatedTorahScrolls) };
         }
         updatedTorahScrolls.pop();
@@ -235,10 +290,9 @@ const synagogueSchema = Joi.object({
   
   
   // Handle input change function
-  const handleInputChange = (field, text) => {
-
+  const handleInputChange = (field, value) => {
     setSynagogueInputs((prev) => {
-      let cleanedValue = text;
+      let cleanedValue = value;
 
       // Torah Scroll Inputs Handler
       if(field.startsWith('torahScroll')){ //when the field is one of the input of torahScroll card
@@ -257,39 +311,56 @@ const synagogueSchema = Joi.object({
         const currentTorahScroll = torahScrolls[currentTorahScrollIndex];
         const currentTorahScrollfield = currentTorahScroll[inputFieldName];
         const lastTorahScrollCard = torahScrolls[maxTorahScrollsArrayLength - 1];
-        const lastDonorForInCurrentTorahScrollAllowed = currentTorahScroll.donorFor[maxDonorForArrayLength - 1];
-        const deletionWasMade = ((currentDonorForFieldIndex || currentDonorForFieldIndex === 0)
-                ? currentTorahScrollfield[currentDonorForFieldIndex][donorForProperty].length
+        const lastDonorForAllowdInCurrentTorahScroll = currentTorahScroll.donorFor[maxDonorForArrayLength - 1];
+
+        const deletionWasMade = 
+                ((currentDonorForFieldIndex || currentDonorForFieldIndex === 0)
+                ? currentTorahScrollfield[currentDonorForFieldIndex].name.length
                 : currentTorahScrollfield?.length)
                 > cleanedValue.length;
-
-          if ( torahScrollLastItemIndex === currentTorahScrollIndex ){ // when the last card in torahScrolls is being edit
+          if ( torahScrollLastItemIndex === currentTorahScrollIndex && cleanedValue !== ''){ // when the last card in torahScrolls is being edit
             if (!deletionWasMade) {
               if ( torahScrolls.length < maxTorahScrollsArrayLength){ // add card only when the number of card is not more then 100
-                  torahScrolls[torahScrolls.length] = { donorName: '', donorFor: [{ name: ''}]};
+                  torahScrolls[torahScrolls.length] = { donorName: '', donorFor: [{ name: '', date: '' } ]};
               }
             }
           }else if ( (torahScrollSecondItemFromEnd === currentTorahScrollIndex) && torahScrolls.length > 2){ //when the second card from the end, is being edit
               const isCurrentInputEmpty = cleanedValue.length === 0;
+
               if (isCurrentInputEmpty){ // when the input is empty
                 let isCurrentTorahScrollEmpty;
                 if (inputFieldName === 'donorName'){ // when the rest of the inputs are empty as well
 
-                  isCurrentTorahScrollEmpty = currentTorahScroll.donorFor
-                  .every(ob => ob.name.trim() === '') && !currentTorahScroll.image; 
+                  isCurrentTorahScrollEmpty = 
+                  !currentTorahScroll.image && 
+                  currentTorahScroll.donorFor.every(ob =>    
+                  ob.name.trim() === '' && ob.date === '' );
+
                 }else if (inputFieldName === 'donorFor'){
 
-                  const isDonorForEmpty = currentTorahScroll.donorFor
-                  .filter( (_,index) => index !== currentDonorForFieldIndex) 
-                  .every(ob => ob.name.trim() === '')                        //////////
-                  isCurrentTorahScrollEmpty = (currentTorahScroll.donorName === '' && isDonorForEmpty) && !currentTorahScroll.image;
+                  const updatedDonorFor = currentTorahScroll.donorFor.map((item, index) => { // Remove the empty property
+                    if (index === currentDonorForFieldIndex) {
+                        const { [donorForProperty]: _, ...rest } = item; 
+                        return rest;
+                    }
+                    return item;
+                });
+                const isDonorForEmpty = updatedDonorFor.every(ob =>  // check if all the rest in donorFor are empty
+                  (ob.name?.trim() === '' || ob.name === undefined) && (ob.date === '' || ob.date === undefined));
+
+                  isCurrentTorahScrollEmpty = 
+                  (!currentTorahScroll.image && !currentTorahScroll.donorName && isDonorForEmpty);
+
                 }
                 if (isCurrentTorahScrollEmpty) { // if the second card form the end, empty. check if the last one empty as well
+
                   if ( lastTorahScrollCard ){ // if the max torah scroll exist
+                    
                     const isTheLastTorahScrollEmpty = // check if he is empty
-                      lastTorahScrollCard.donorFor
-                      .every(ob => ob.name.trim() === '') &&
-                      (lastTorahScrollCard.donorName === '' && !lastTorahScrollCard.image);
+                    !lastTorahScrollCard.image && 
+                    !lastTorahScrollCard.donorName && 
+                    lastTorahScrollCard.donorFor.every(ob =>    
+                    ob.name.trim() === '' && ob.date === '' );
                     
                     if (isTheLastTorahScrollEmpty) torahScrolls.pop();;
 
@@ -304,33 +375,57 @@ const synagogueSchema = Joi.object({
           currentTorahScroll.donorName = cleanedValue;
         }
         else if (inputFieldName === 'donorFor'){ // when current field is one of the donorFor inputs
-          const lastDonorFor = currentTorahScroll.donorFor.length -1;
+          const lastDonorForIndex = currentTorahScroll.donorFor.length -1;
           const secondDonorForFeildFromTheEndIndex = currentTorahScroll.donorFor.length -2;
-          if ( lastDonorFor === currentDonorForFieldIndex ) { // when the last donorFor field is being edit
+
+          if ( lastDonorForIndex === currentDonorForFieldIndex && cleanedValue !== '') { // when the last donorFor field is being edit
             if (!deletionWasMade){
               if ( currentTorahScroll.donorFor.length < maxDonorForArrayLength){// adding one input only when the donor for array is less than 10
                 const lastDonerForArrayIndexPlusOne = currentTorahScroll.donorFor.length;
-                currentTorahScroll.donorFor[lastDonerForArrayIndexPlusOne] = {name: ''};
+                currentTorahScroll.donorFor[lastDonerForArrayIndexPlusOne] = { name: '', date: '' };
               }
             }
-          }else if (secondDonorForFeildFromTheEndIndex === currentDonorForFieldIndex ){ // when the second input from the end is being edit
-            const isCurrentInputEmpty = cleanedValue === '';
-            if ( isCurrentInputEmpty ){ // if the second input from the end empty
-              if ( !lastDonorForInCurrentTorahScrollAllowed?.name ) currentTorahScroll.donorFor.pop(); // check the last donorFor input with the max index allowed, if not exist delete the last input
+          } else if (secondDonorForFeildFromTheEndIndex === currentDonorForFieldIndex ){ // when the second input from the end is being edit
+              const isCurrentInputEmpty = cleanedValue === '';
+
+              if ( isCurrentInputEmpty ){ // if the second input from the end empty
+                const isTheLastDonorForfilled = lastDonorForAllowdInCurrentTorahScroll?.name || lastDonorForAllowdInCurrentTorahScroll?.date;
+
+                if (donorForProperty === 'date'){ // if one of the date properties are empty
+                  const nameOfTheDonorFor = !currentTorahScroll.donorFor[currentDonorForFieldIndex].name;
+
+                  if ( nameOfTheDonorFor && !isTheLastDonorForfilled) currentTorahScroll.donorFor.pop(); // check the last donorFor input with the max index allowed, if not exist delete the last input
+
+                } else {
+                  console.log(currentTorahScroll.donorFor[currentDonorForFieldIndex])
+                  const dateOfTheDonorForIsEmpty = !currentTorahScroll.donorFor[currentDonorForFieldIndex].date;
+                  console.log(dateOfTheDonorForIsEmpty)
+                  if ( dateOfTheDonorForIsEmpty && !isTheLastDonorForfilled ) currentTorahScroll.donorFor.pop(); // check the last donorFor input with the max index allowed, if not exist delete the last input
+                }
+              }
             }
-          }
+
           currentTorahScroll.donorFor[currentDonorForFieldIndex][donorForProperty] = cleanedValue; // assign the new value to the state
-        }    
+        }
+
         else if (inputFieldName === 'imageUri'){  /// change it to else if there is not other inputs to torah scroll
           currentTorahScroll.image = cleanedValue; // adding the selected image uri to his card
         }
+
         return { // set the new value of donorFor array to the state
           ...prev,
           torahScrolls: torahScrolls
         };
       }
       // Synagogue Inputs Handler
-      else return { ...prev, [field]: cleanedValue }; // set the new value of one of the synagogue inputs
+      else {                      // set the new value of one of the synagogue inputs
+        if (field === 'time'){      // if the input is date
+            const month = cleanedValue.split('_')[0];
+            const week = cleanedValue.split('_')[1];
+            return {...prev, [field]: { month: month, week: week } };
+        }
+        return {...prev, [field]: cleanedValue };
+        }
     });
   };
   return (
@@ -360,6 +455,10 @@ const synagogueSchema = Joi.object({
         style={styles.input}
       />
 
+      <ImgPicker text={'Synagogue Image'} handleInputChange={handleInputChange }/>
+
+      {synagogueInputs.image && <Image source={{ uri: synagogueInputs.image }} style={styles.imagePreview} />}
+
       {/* Torah Scroll Component */}
       <TorahScrollForm
       torahScrolls={synagogueInputs.torahScrolls} 
@@ -368,7 +467,14 @@ const synagogueSchema = Joi.object({
       handleRemoveDonorForItem={handleRemoveDonorForItem}
       />
 
-      {/* Minus Button */}
+    <View style={styles.optionalQuestion}>
+      <Text style={styles.label}>
+        Optional: When a new Torah scroll is donated, for how long would you like to read only from it?
+      </Text>
+      <MonthAndWeekDatePicker time={synagogueInputs.time} handleInputChange={handleInputChange}/>
+    </View>
+
+      {/* Submit Button */}
       <View style={styles.submitButtonContainer}>
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Submit</Text>
@@ -404,13 +510,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   submitButtonContainer: {
-    width: '80%',
+    width: '85%',
     alignSelf: 'center',
-    alignItems: "flex-start",
   },
   mainContainer: {
     padding: 10,
   },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    marginTop: 10,
+    borderRadius: 5,
+},
+label: {
+  fontSize: 16,
+  color: '#333',
+  marginBottom: 8,
+},
+optionalQuestion: {
+  borderWidth: 0.3,
+  borderColor: 'gray',
+  borderRadius: 10,
+  padding: 15,
+  width: '90%',
+  alignSelf: 'center',
+  marginBottom: 20,
+  marginTop: 10,
+},
 });
 
 export default SynagogueForm;

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
+//Months List
+
 const hebrewMonths = [
   { name: 'Nisan', days: 30 },
   { name: 'Iyar', days: 29 },
@@ -18,21 +20,21 @@ const hebrewMonths = [
   { name: 'Adar II', days: 29 },
 ];
 
-const DatePicker = () => {
+const MonthAndDayDatePicker = ({ date, handleInputChange, torahScrollIndex, donorForIndex }) => {
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [selectedDay, setSelectedDay] = useState(1); 
-  const [inputText, setInputText] = useState(''); 
+
+const inputText = date;
 
   const handleSubmit = () => {
-    setInputText(`${selectedDay} ${hebrewMonths[selectedMonth].name}`);
+    handleInputChange(`torahScroll_donorFor_${torahScrollIndex}_${donorForIndex}_date`, `${selectedDay} ${hebrewMonths[selectedMonth].name}`)
     setModalVisible(false);
   };
 
-  const handleClear = () => {
-    setSelectedMonth(0);
-    setSelectedDay(1);
-    setInputText('');
+  const handleClear = () => { 
+    handleInputChange(`torahScroll_donorFor_${torahScrollIndex}_${donorForIndex}_date`, '')
     setModalVisible(false);
   };
 
@@ -43,7 +45,7 @@ const DatePicker = () => {
         value={inputText}
         editable={false}
         style={styles.input}
-        onPress={() => setModalVisible(true)}  // use onFocus instead of onPress
+        onPress={() => setModalVisible(true)}
       />
 
       <Modal
@@ -78,14 +80,13 @@ const DatePicker = () => {
             </View>
 
 
-            <View>
+            <View style={styles.pickerContainer}>
 
                 <Text style={ styles.pickerLabel }>Day</Text>
 
                 <Picker
                 selectedValue={selectedDay}
                 onValueChange={(itemValue) => setSelectedDay(itemValue)}
-                style={{ width: 250, height: 250 }}
                 >
                 {Array.from(
                     { length: hebrewMonths[selectedMonth].days },
@@ -103,14 +104,14 @@ const DatePicker = () => {
                 onPress={handleSubmit}
                 style={styles.submitButton}
               >
-                <Text style={styles.buttonText}>Submit</Text>
+                <Text style={styles.submitButtonText}>Submit</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleClear}
                 style={styles.clearButton}
               >
-                <Text style={styles.buttonText}>Clear</Text>
+                <Text style={styles.clearButtonText}>Clear</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -127,8 +128,7 @@ const styles = StyleSheet.create({
     borderColor: 'gray',
     borderRadius: 5,
     paddingHorizontal: 10,
-    width: '85%',
-    marginBottom: 10,
+    width: '100%',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -137,21 +137,29 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   submitButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#3399FF', // Blue background for submit
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
     width: '48%',
+    color: 'white',
   },
   clearButton: {
-    backgroundColor: '#f44336', 
+    borderColor: '#3399FF',
+    borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
     width: '48%',
   },
-  buttonText: {
-    color: 'white',
+  submitButtonText: {
+    color: 'white', 
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  
+  clearButtonText: {
+    color: '#3399FF',
     fontSize: 16,
     textAlign: 'center',
   },
@@ -174,19 +182,13 @@ const styles = StyleSheet.create({
   },
   pickerLabel: {
     fontSize: 17,
-    textAlign: 'center',
-    marginTop: 25,
-    position: 'absolute',
-    width: '100%',
     textDecorationLine: 'underline',
-
   },
   pickerContainer: {
     width: 250,
-    height: 250,
-    
+    height: 220,    
   }
 
 });
 
-export default DatePicker;
+export default MonthAndDayDatePicker;
