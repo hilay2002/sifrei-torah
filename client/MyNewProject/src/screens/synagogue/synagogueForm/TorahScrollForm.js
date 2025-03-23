@@ -1,7 +1,7 @@
 import { Image, TextInput, StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import React from 'react'
-import ImgPicker from './ImgPicker'
-import MonthAndDayDatePicker from './MonthAndDayDatePicker'
+import ImgPicker from '../../../components/ImgPicker'
+import MonthAndDayDatePicker from '../../../components/MonthAndDayDatePicker'
 
 const TorahScrollForm = ({ handleInputChange, torahScrolls, handleRemoveTorahScroll, handleRemoveDonorForItem }) => {
 

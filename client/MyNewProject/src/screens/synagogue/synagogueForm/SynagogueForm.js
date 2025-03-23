@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import expressApi from '../../api/axios';
+import expressApi from '../../../api/axios';
 import axios from 'axios';
 import Joi from 'joi';
 import TorahScrollForm from './TorahScrollForm';
-import ImgPicker from './ImgPicker';
-import MonthAndWeekDatePicker from '../MonthAndWeekDatePicker';
+import ImgPicker from '../../../components/ImgPicker';
+import MonthAndWeekDatePicker from '../../../components/MonthAndWeekDatePicker';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 
 
@@ -16,7 +16,6 @@ const SynagogueForm = () => {
         name: '',
         city: '',
         street: '',
-        image: '',
         time: { month: '', week: '' },
         torahScrolls: [
         {
@@ -46,27 +45,60 @@ const SynagogueForm = () => {
       
           // Image upload and torah scrolls update
           const uploadImages = async () => {
-            const torahScrollResponse = await Promise.allSettled(
-              value.torahScrolls.map(async (torahScroll) => {
-                const imageUrl = await uploadImage(await resizeImage(torahScroll.image));
-                return { ...torahScroll, image: imageUrl };
-              })
-            );
-            const updatedTorahScrolls = torahScrollResponse.map(result =>
-            result.status === 'fulfilled' && result.value );
-            
-            const synagogueResponse = await uploadImage(await resizeImage(synagogueInputs.image));
-            const updatedSynagogueImage = synagogueResponse.map(result =>
-            result.status === 'fulfilled' && result.value );
-            
-      
-            setSynagogueInputs((prev) => ({
-              ...prev,
-              image: updatedSynagogueImage,
-              torahScrolls: updatedTorahScrolls,
-            }));
+            try{
+              const torahScrollResponse = await Promise.allSettled(
+                value.torahScrolls.map(async (torahScroll) => {
+                  const imageUrl = await uploadImage(await resizeImage(torahScroll.image));
+                  return { ...torahScroll, image: imageUrl };
+                })
+              );
+              const updatedTorahScrolls = torahScrollResponse.map(result =>
+              result.status === 'fulfilled' && result.value );
+              
+              const synagogueImageUrl = await uploadImage(await resizeImage(synagogueInputs.image));
+              
+              const updatedData = {
+                ...synagogueInputs,
+                image: synagogueImageUrl,
+                torahScrolls: updatedTorahScrolls, 
+              };
+
+                // Remove empty `date` fields inside donorFor
+                updatedData.torahScrolls.forEach((scroll) => {
+                  scroll.donorFor.forEach((donor) => {
+                    if (donor.date === '') {
+                      delete donor.date;
+                    }
+                  });
+                });
+              
+                // Remove optional `time` if it's empty or has '0' as values
+                if (updatedData.time) {
+                  if (updatedData.time.month === '' || updatedData.time.month === '0') {
+                    delete updatedData.time.month;
+                  }
+                  if (updatedData.time.week === '' || updatedData.time.week === '0') {
+                    delete updatedData.time.week;
+                  }
+              
+                  // If both month and week are removed, delete the entire time object
+                  if (!updatedData.time.month && !updatedData.time.week) {
+                    delete updatedData.time;
+                  }
+                }
+              
+                // Remove optional `image` if it's empty
+                if (updatedData.image === '') {
+                  delete updatedData.image;
+                }
+              
+              await expressApi.post('/synagogue', updatedData);
+
+            } catch (err){
+              console.log(err);
+            }
           };
-          uploadImages();
+          await uploadImages();
 
         } catch (error) {
           if (error.isJoi) {
@@ -79,8 +111,6 @@ const SynagogueForm = () => {
         }
       };
       validateAndUpload();
-
-      
     }
   }, [effectsAfterSub]); 
   
@@ -152,8 +182,6 @@ const SynagogueForm = () => {
   // ImageResizing
 
   const resizeImage = async (imageUri) => {
-
-    console.log(imageUri) 
 
     const maxWidth = 800;
     const maxHeight = 800;
@@ -236,7 +264,6 @@ const SynagogueForm = () => {
     })
     });
   }
-  console.log(synagogueInputs);
   // Remove torah scroll card when minus butonn clicked
   const handleRemoveTorahScroll = (torahScrollIndex) => {
     setSynagogueInputs(prev => ({
@@ -397,9 +424,7 @@ const SynagogueForm = () => {
                   if ( nameOfTheDonorFor && !isTheLastDonorForfilled) currentTorahScroll.donorFor.pop(); // check the last donorFor input with the max index allowed, if not exist delete the last input
 
                 } else {
-                  console.log(currentTorahScroll.donorFor[currentDonorForFieldIndex])
                   const dateOfTheDonorForIsEmpty = !currentTorahScroll.donorFor[currentDonorForFieldIndex].date;
-                  console.log(dateOfTheDonorForIsEmpty)
                   if ( dateOfTheDonorForIsEmpty && !isTheLastDonorForfilled ) currentTorahScroll.donorFor.pop(); // check the last donorFor input with the max index allowed, if not exist delete the last input
                 }
               }
@@ -515,6 +540,7 @@ const styles = StyleSheet.create({
   },
   mainContainer: {
     padding: 10,
+    backgroundColor: 'white',
   },
   imagePreview: {
     width: 100,

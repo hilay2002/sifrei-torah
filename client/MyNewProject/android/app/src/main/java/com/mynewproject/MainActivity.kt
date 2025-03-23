@@ -1,4 +1,4 @@
-package com.mynewproject
+package com.hilay.sefreitorah
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

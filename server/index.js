@@ -35,11 +35,25 @@ app.post('/get-signature', (req, res) => {
   });
 
 app.post('/synagogue', async (req, res) => {
-    console.log(req.body)
-    // const synagogue = new Synagogue({
-    //     name: req.body.name
-    // })
-    // await synagogue.save();
-}); 
+  try{
+    console.log(req.body);
+    const synagogue = new Synagogue( req.body )
+    await synagogue.save();
+  } catch (err) {
+    console.log(err)
+  }
+});
+
+app.get('/synagogueCards', async (req, res) => {
+  try {
+    const synagogueCards = await Synagogue.find({});
+    console.log(synagogueCards);
+    res.json(synagogueCards);
+  } catch (error) {
+    console.error('Error fetching synagogues:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

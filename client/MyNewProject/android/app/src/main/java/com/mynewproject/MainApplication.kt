@@ -1,4 +1,4 @@
-package com.mynewproject
+package com.hilay.sefreitorah
 
 import android.app.Application
 import com.facebook.react.PackageList
@@ -11,6 +11,7 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
+import com.hilay.sefreitorah.BuildConfig
 
 class MainApplication : Application(), ReactApplication {
 
