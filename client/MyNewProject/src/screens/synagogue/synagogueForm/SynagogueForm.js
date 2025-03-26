@@ -49,6 +49,7 @@ const SynagogueForm = () => {
               const torahScrollResponse = await Promise.allSettled(
                 value.torahScrolls.map(async (torahScroll) => {
                   const imageUrl = await uploadImage(await resizeImage(torahScroll.image));
+                  console.log(imageUrl);
                   return { ...torahScroll, image: imageUrl };
                 })
               );
@@ -208,16 +209,16 @@ const SynagogueForm = () => {
     }
   };
   
-
+  console.log(synagogueInputs)
   // Image Upload
   const uploadImage = async (imageUri) => {
     try {
-      const imageUriFormatted = imageUri.replace("file://", ""); 
+
       const { signature, timestamp, apiKey, cloudName } = await getSignature();
 
       const formData = new FormData(); // Prepare the form data for Cloudinary
       formData.append('file', {
-      uri: imageUriFormatted,
+      uri: imageUri,
       name: 'upload.jpg',
       type: 'image/jpeg',
       });
@@ -225,17 +226,19 @@ const SynagogueForm = () => {
       formData.append('api_key', apiKey);
       formData.append('signature', signature);
       formData.append('folder', 'torah-scrolls');
+
   
       const uploadResponse = await axios.post( // Send image to Cloudinary
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
-  
+
       console.log('Upload success:', uploadResponse.data.secure_url); // Success and error handling
       return uploadResponse.data.secure_url;
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error);
+    throw error;  // Rethrow the error so the outer try-catch can catch itd
     }
   };
   

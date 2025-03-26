@@ -15,10 +15,10 @@ const App = () => {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator>
-        <Stack.Screen name="Synagogue Form" component={SynagogueForm} />
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Synagogue List" component={SynagogueList} />
           <Stack.Screen name="Synagogue" component={Synagogue} />
+          <Stack.Screen name="Synagogue Form" component={SynagogueForm} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
