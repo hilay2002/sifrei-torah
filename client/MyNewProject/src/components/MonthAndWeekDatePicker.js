@@ -30,13 +30,15 @@ const inputText = [monthText, weekText].filter(Boolean).join(' and ');
 
   return (
     <View>
-      <TextInput
-        placeholder={'Select Amount of time'}
-        value={inputText}
-        editable={false}
-        style={styles.input}
-        onPress={() => setModalVisible(true)}
-      />
+      <TouchableOpacity onPress={() => setModalVisible(true)}>
+        <TextInput
+          placeholder={'Select Amount of time'}
+          value={inputText}
+          editable={false}
+          style={styles.input}
+          pointerEvents="none"
+        />
+      </TouchableOpacity>
 
       <Modal
         visible={modalVisible}

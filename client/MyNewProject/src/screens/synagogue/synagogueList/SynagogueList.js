@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Button, FlatList } from 'react-native';
+import { StyleSheet, View, Button, FlatList } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import expressApi from '../../../api/axios';

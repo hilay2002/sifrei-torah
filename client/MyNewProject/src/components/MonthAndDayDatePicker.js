@@ -40,13 +40,15 @@ const inputText = date;
 
   return (
     <View>
-      <TextInput
-        placeholder={'Date of death'}
-        value={inputText}
-        editable={false}
-        style={styles.input}
-        onPress={() => setModalVisible(true)}
-      />
+      <TouchableOpacity onPress={() => setModalVisible(true)}>
+        <TextInput
+          placeholder={'Date of death'}
+          value={inputText}
+          editable={false}
+          style={styles.input}
+          pointerEvents="none"  // Allows touch to pass through to TouchableOpacity
+        />
+      </TouchableOpacity>
 
       <Modal
         visible={modalVisible}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Image, ScrollView, Text, TextInput, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import expressApi from '../../../api/axios';
 import axios from 'axios';
@@ -7,15 +7,20 @@ import TorahScrollForm from './TorahScrollForm';
 import ImgPicker from '../../../components/ImgPicker';
 import MonthAndWeekDatePicker from '../../../components/MonthAndWeekDatePicker';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
+import { AuthContext } from '../../../components/AuthProvider';
+
 
 
 const SynagogueForm = () => {
+
+  const { user } = useContext(AuthContext);
 
   // Inputs State
   const [synagogueInputs, setSynagogueInputs] = useState({
         name: '',
         city: '',
         street: '',
+        owner: user.uid,
         time: { month: '', week: '' },
         torahScrolls: [
         {
@@ -137,6 +142,8 @@ const SynagogueForm = () => {
       'string.min': 'Synagogue street must be at least 2 characters long.',
       'string.max': 'Synagogue street cannot exceed 100 characters.',
     }),
+
+    owner: Joi.string().required(),
   
     // Validation for image (optional)
     image: Joi.string().uri().required().messages({
@@ -209,7 +216,6 @@ const SynagogueForm = () => {
     }
   };
   
-  console.log(synagogueInputs)
   // Image Upload
   const uploadImage = async (imageUri) => {
     try {
