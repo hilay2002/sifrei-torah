@@ -1,9 +1,8 @@
-import {GoogleSignin, isErrorWithCode, statusCodes} from '@react-native-google-signin/google-signin';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import { getAuth, GoogleAuthProvider, signInWithCredential, signOut, onAuthStateChanged } from '@react-native-firebase/auth';
 
 GoogleSignin.configure({
   webClientId: '1067797101091-dmnfiqadr0n1ci0f19mgmo8j72v7k32k.apps.googleusercontent.com',
-  // offlineAccess: true,
 });
 
 const auth = getAuth();
@@ -31,14 +30,14 @@ const auth = getAuth();
       console.log('google sign in');  
       const {data} = await GoogleSignin.signIn();
       console.log('id Token:')
-      console.log(data.idToken)
 
       console.log('google credentioal')
       const googleCredentials = GoogleAuthProvider.credential(data.idToken);
 
       console.log('firebase auth');
-      await signInWithCredential(auth, googleCredentials);
-
+      const userCredetial = await signInWithCredential(auth, googleCredentials);
+      const uid = userCredetial.user._user.uid;
+      return uid;
 
     } catch (error) {
       console.error('=> Google Sign In', error);

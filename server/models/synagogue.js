@@ -40,6 +40,7 @@ const synagogueSchema = new mongoose.Schema(
     name: { type: String, required: true },
     city: { type: String, required: true },
     street: { type: String, required: true },
+    owner: { type: String, required: true },
     time: { type: timeSchema, required: false },
     torahScrolls: { 
       type: [torahScrollSchema],
